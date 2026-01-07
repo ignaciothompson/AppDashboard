@@ -1,0 +1,84 @@
+<!-- Interactive Dots Background -->
+<app-interactive-dots backgroundColor="#101622" dotColor="white">
+</app-interactive-dots>
+<header class="top-nav">
+    <div class="nav-brand"></div>
+    <div class="nav-actions">
+        <button class="btn btn-outline-primary btn-sm" (click)="openAddModal()">
+            <i class="bi bi-plus-lg me-1"></i> Add </button>
+    </div>
+</header>
+<main class="dashboard-main">
+    <!-- Time and Status Section -->
+    <section class="time-section animate-fade-in-down">
+        <h1 class="time-display">{{currentTime | date:'HH:mm'}}</h1>
+        <h2 class="date-display">{{currentTime | date:'EEEE, MMM d'}}</h2>
+        <!-- Status Indicators -->
+        <div class="status-bar">
+            <div class="status-pill">
+                <i class="bi bi-wifi status-icon success"></i>
+                <span>Connected</span>
+            </div>
+            <div class="status-pill" *ngIf="hostStats?.disk">
+                <i class="bi bi-hdd-fill status-icon primary"></i>
+                <span>{{hostStats.disk.usage}} Used</span>
+            </div>
+            <div class="status-pill" *ngIf="hostStats">
+                <i class="bi bi-cpu-fill status-icon warning"></i>
+                <span>{{hostStats.memPercent || 0}}% Load</span>
+            </div>
+        </div>
+    </section>
+    <!-- Fast Access Section -->
+    <section class="content-section" *ngIf="bookmarks.length > 0">
+        <div class="section-header-line">
+            <i class="bi bi-lightning-charge-fill section-icon warning"></i>
+            <h3 class="section-title">Fast Access</h3>
+        </div>
+        <div cdkDropList [cdkDropListData]="bookmarks" (cdkDropListDropped)="dropBookmark($event)" class="fast-access-grid">
+            <div *ngFor="let item of bookmarks" cdkDrag class="fast-access-card">
+                <div *cdkDragPlaceholder class="drag-placeholder fast-access-placeholder"></div>
+                <a [href]="item.url" target="_blank" class="fast-access-link">
+                    <div class="fast-access-icon-wrapper">
+                        <img *ngIf="item.icon" [src]="item.icon" [alt]="item.name" class="fast-access-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="fast-access-icon-fallback">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                    <span class="fast-access-name">{{item.name}}</span>
+                </a>
+                <!-- Hover Config Button -->
+                <button class="card-config-btn" (click)="openEditModal(item); $event.preventDefault(); $event.stopPropagation()">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+    <!-- App Sections - Two Column Layout -->
+    <div cdkDropListGroup class="sections-grid">
+        <div cdkDropList (cdkDropListDropped)="dropSection($event)" class="sections-container">
+            <section *ngFor="let section of sections" cdkDrag class="app-section">
+                <!-- Section Header -->
+                <div class="section-header-line">
+                    <i class="bi section-icon" [ngClass]="{
+                        'bi-film danger': section.title.toLowerCase().includes('media'),
+                        'bi-hdd-stack-fill info': section.title.toLowerCase().includes('server'),
+                        'bi-folder2-open primary': !section.title.toLowerCase().includes('media') && !section.title.toLowerCase().includes('server')
+                    }"></i>
+                    <h3 class="section-title">{{section.title}}</h3>
+                </div>
+                <!-- Apps Grid -->
+                <div cdkDropList [cdkDropListData]="section.AppItems || []" [id]="'section-' + section.id" (cdkDropListDropped)="drop($event, section.id)" [cdkDropListConnectedTo]="connectedTo" cdkDropListOrientation="horizontal" class="apps-grid">
+                    <div *ngFor="let item of section.AppItems" cdkDrag class="app-item-wrapper">
+                        <div *cdkDragPlaceholder class="drag-placeholder"></div>
+                        <app-app-tile [app]="item" [editMode]="false" (edit)="openEditModal($event)" (delete)="onDeleteApp($event)">
+                        </app-app-tile>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+<!-- Modal -->
+<app-edit-app-modal *ngIf="showModal" [app]="editingItem" (saveApp)="onSaveApp($event)" (cancel)="showModal = false">
+</app-edit-app-modal>

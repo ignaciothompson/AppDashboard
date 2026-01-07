@@ -1,0 +1,148 @@
+/* ================================
+   APP TILE COMPONENT STYLES
+   NexusOS Design System
+   ================================ */
+
+.app-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.app-card:hover {
+    border-color: rgba(19, 91, 236, 0.5);
+    box-shadow: 0 0 20px rgba(19, 91, 236, 0.15);
+    transform: translateY(-2px);
+}
+
+.app-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    height: 100%;
+}
+
+.app-card-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.75rem;
+    height: 100%;
+    gap: 0.75rem;
+}
+
+/* Gradient Overlay */
+.card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom right, rgba(19, 91, 236, 0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.app-card:hover .card-overlay {
+    opacity: 1;
+}
+
+/* Icon Wrapper - Colored Circle */
+.app-icon-wrapper {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 9999px;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.app-card:hover .app-icon-wrapper {
+    transform: scale(1.1);
+}
+
+/* Icon Image */
+.app-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* Icon Fallback */
+.app-icon-fallback {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-card:hover .app-icon-fallback {
+    color: white;
+}
+
+/* App Name */
+.app-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.app-card:hover .app-name {
+    color: var(--text);
+}
+
+/* Config Button - Hover Only */
+.card-config-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.app-card:hover .card-config-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.card-config-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.card-config-btn i {
+    font-size: 0.875rem;
+}

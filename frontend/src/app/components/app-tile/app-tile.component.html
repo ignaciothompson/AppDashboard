@@ -1,0 +1,21 @@
+<div class="app-card">
+    <a [href]="app.url" target="_blank" class="app-card-link">
+        <div class="app-card-content">
+            <!-- Hover gradient overlay -->
+            <div class="card-overlay"></div>
+            <!-- Icon -->
+            <div class="app-icon-wrapper">
+                <img *ngIf="!imageError && app.icon" [src]="app.icon" [alt]="app.name" class="app-icon" (error)="onError()">
+                <div *ngIf="imageError || !app.icon" class="app-icon-fallback">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+            </div>
+            <!-- Name -->
+            <span class="app-name">{{app.name}}</span>
+        </div>
+    </a>
+    <!-- Config button - always visible on hover -->
+    <button class="card-config-btn" (click)="onEdit($event)">
+        <i class="bi bi-arrows-fullscreen"></i>
+    </button>
+</div>

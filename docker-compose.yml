@@ -1,0 +1,12 @@
+services:
+  dashboard-app:
+    build: .
+    container_name: dashboard-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app_data:/app/backend/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - PORT=3000
+    restart: unless-stopped

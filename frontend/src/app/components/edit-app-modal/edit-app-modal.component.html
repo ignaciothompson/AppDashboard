@@ -1,0 +1,93 @@
+<div class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{app.id ? 'Edit App' : 'Add App'}}</h5>
+                <button type="button" class="btn-close" (click)="close()"></button>
+            </div>
+            <div class="modal-body">
+                <form (ngSubmit)="save()" #f="ngForm">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" [(ngModel)]="app.name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL</label>
+                        <input type="url" class="form-control" [(ngModel)]="app.url" name="url" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <div class="d-flex gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="appType" [(ngModel)]="appType" value="app" id="typeApp">
+                                <label class="form-check-label" for="typeApp">Standard App</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="appType" [(ngModel)]="appType" value="bookmark" id="typeBookmark">
+                                <label class="form-check-label" for="typeBookmark">Fast Access (Bookmark)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Icon Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Icon</label>
+                        <div class="d-flex gap-2 mb-2 flex-wrap">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="dashboard" id="iconDashboard" (change)="onIconTypeChange()">
+                                <label class="form-check-label" for="iconDashboard">Dashboard Icons</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="url" id="iconUrl">
+                                <label class="form-check-label" for="iconUrl">URL</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="file" id="iconFile">
+                                <label class="form-check-label" for="iconFile">File Upload</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Dashboard Icons Search -->
+                        <div *ngIf="iconType === 'dashboard'" class="dashboard-icon-selector">
+                            <input 
+                                type="text" 
+                                class="form-control mb-2" 
+                                [(ngModel)]="iconSearchQuery" 
+                                (input)="onIconSearch()"
+                                placeholder="Search for icon (e.g., youtube, plex, github)"
+                                name="iconSearch">
+                            <div *ngIf="isLoadingIcons" class="text-muted small mb-2">Searching icons...</div>
+                            <div *ngIf="iconSearchResults.length > 0" class="icon-grid">
+                                <div 
+                                    *ngFor="let iconName of iconSearchResults" 
+                                    class="icon-item"
+                                    (click)="selectDashboardIcon(iconName)"
+                                    [title]="iconName">
+                                    <img [src]="getIconUrl(iconName)" [alt]="iconName" onerror="this.style.display='none'">
+                                    <small class="icon-name">{{iconName}}</small>
+                                </div>
+                            </div>
+                            <div *ngIf="iconSearchQuery && !isLoadingIcons && iconSearchResults.length === 0" class="text-muted small mt-2">
+                                No icons found. Try searching for common names like "youtube", "plex", "github", etc.
+                            </div>
+                        </div>
+                        
+                        <div *ngIf="iconType === 'url'">
+                            <input type="text" class="form-control" [(ngModel)]="app.icon" name="icon" placeholder="https://example.com/icon.png">
+                        </div>
+                        <div *ngIf="iconType === 'file'">
+                            <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*">
+                            <div *ngIf="uploading" class="text-muted small mt-1">Uploading...</div>
+                        </div>
+                        <div *ngIf="app.icon" class="mt-2 d-flex align-items-center gap-2">
+                            <img [src]="app.icon" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'">
+                            <small class="text-muted">Current Icon</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="close()">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!app.name || !app.url || uploading">Save</button>
+            </div>
+        </div>
+    </div>

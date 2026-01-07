@@ -1,0 +1,251 @@
+/* NexusOS Design System Tokens */
+:root {
+    /* Primary Colors */
+    --primary: #135bec;
+    --primary-light: rgba(19, 91, 236, 0.2);
+    --primary-glow: rgba(19, 91, 236, 0.5);
+    
+    /* Background Colors - Darker Navy */
+    --bg-dark: #101622;
+    --bg: #1a1d24;
+    --bg-light: #232833;
+    --bg-elevated: #232f48;
+    
+    /* Text Colors */
+    --text: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    
+    /* Border Colors */
+    --border: #232f48;
+    --border-muted: rgba(35, 47, 72, 0.5);
+    
+    /* Status Colors */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    
+    /* App Icon Colors */
+    --icon-plex: #e5a00d;
+    --icon-spotify: #1db954;
+    --icon-jellyfin: #a855f7;
+    --icon-sonarr: #38bdf8;
+    --icon-radarr: #fbbf24;
+    --icon-overseerr: #818cf8;
+    --icon-docker: #3b82f6;
+    --icon-pihole: #ef4444;
+    --icon-grafana: #f97316;
+    --icon-portainer: #06b6d4;
+    --icon-nginx: #22c55e;
+    --icon-unraid: #ea580c;
+}
+
+/* Global Styles */
+* {
+    box-sizing: border-box;
+}
+
+html, html.dark {
+    color-scheme: dark;
+    background-color: #101622 !important;
+}
+
+body {
+    background-color: #101622 !important;
+    color: var(--text) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Override any app-root or main background */
+app-root, main, .dashboard-main {
+    background-color: #101622 !important;
+}
+
+/* Selection */
+::selection {
+    background-color: var(--primary);
+    color: white;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #101622;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--bg-elevated);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #34425e;
+}
+
+/* Modal Dark Mode overrides for Bootstrap */
+.modal-content {
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+}
+.modal-header, .modal-footer {
+    border-color: var(--border);
+}
+.form-control, .form-select {
+    background-color: var(--bg-dark);
+    border-color: var(--border-muted);
+    color: var(--text);
+    border-radius: 0.5rem;
+}
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-dark);
+    color: var(--text);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+.form-control::placeholder {
+    color: var(--text-muted);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+.btn-primary:hover {
+    background-color: #1d6af5;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--bg-elevated);
+    color: var(--text);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+    background-color: var(--bg-light);
+}
+
+.btn-outline-light {
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: transparent;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+.btn-outline-light:hover {
+    background-color: var(--bg-elevated);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.btn-outline-primary {
+    background-color: var(--primary);
+    color: white;
+    border: 2px solid var(--primary);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    padding: 0.4rem 0.85rem;
+}
+.btn-outline-primary:hover {
+    background-color: #1d6af5;
+    border-color: #1d6af5;
+    box-shadow: 0 0 12px rgba(19, 91, 236, 0.4);
+}
+
+.btn-outline-secondary {
+    background-color: rgba(35, 47, 72, 0.6);
+    color: var(--text);
+    border: 1px solid rgba(100, 120, 150, 0.5);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    padding: 0.4rem 0.85rem;
+}
+.btn-outline-secondary:hover {
+    background-color: var(--bg-elevated);
+    border-color: rgba(150, 170, 200, 0.6);
+    color: var(--text);
+}
+
+.btn-edit-delete {
+    color: var(--text-muted);
+    border: none;
+    background: transparent;
+    padding: 0.25rem;
+    transition: all 0.2s ease;
+}
+.btn-edit-delete:hover {
+    color: var(--text);
+    background: var(--bg-elevated);
+    border-radius: 0.25rem;
+}
+
+/* Icon Button (circular) */
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.btn-icon:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* Card styles */
+.card-dark {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+}
+
+/* Glassmorphism utility */
+.glass {
+    background: rgba(16, 22, 34, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-down {
+    animation: fadeInDown 0.5s ease-out;
+}
