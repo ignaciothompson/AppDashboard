@@ -4,8 +4,8 @@
 <header class="top-nav">
     <div class="nav-brand"></div>
     <div class="nav-actions">
-        <button class="nav-btn nav-btn-secondary" (click)="addSection()">
-            <i class="bi bi-folder-plus me-1"></i> Section </button>
+        <button class="nav-btn nav-btn-secondary" (click)="openSettingsModal()">
+            <i class="bi bi-gear-fill me-1"></i> Settings </button>
         <button class="nav-btn nav-btn-primary" (click)="openAddModal()">
             <i class="bi bi-plus-lg me-1"></i> Add </button>
     </div>
@@ -38,7 +38,7 @@
             <h3 class="section-title">Fast Access</h3>
         </div>
         <div cdkDropList [cdkDropListData]="bookmarks" (cdkDropListDropped)="dropBookmark($event)" class="fast-access-grid">
-            <div *ngFor="let item of bookmarks" cdkDrag class="fast-access-card">
+            <div *ngFor="let item of bookmarks; trackBy: trackById" cdkDrag class="fast-access-card">
                 <div *cdkDragPlaceholder class="drag-placeholder fast-access-placeholder"></div>
                 <a [href]="item.url" target="_blank" class="fast-access-link">
                     <div class="fast-access-icon-wrapper">
@@ -57,9 +57,9 @@
         </div>
     </section>
     <!-- App Sections - Two Column Layout -->
-    <div cdkDropListGroup class="sections-grid">
-        <div cdkDropList (cdkDropListDropped)="dropSection($event)" class="sections-container">
-            <section *ngFor="let section of sections" cdkDrag class="app-section">
+    <div class="sections-grid">
+        <div class="sections-container">
+            <section *ngFor="let section of sections; trackBy: trackById" class="app-section">
                 <!-- Section Header -->
                 <div class="section-header-line">
                     <i class="bi section-icon" [ngClass]="{
@@ -71,7 +71,7 @@
                 </div>
                 <!-- Apps Grid -->
                 <div cdkDropList [cdkDropListData]="section.AppItems || []" [id]="'section-' + section.id" (cdkDropListDropped)="drop($event, section.id)" [cdkDropListConnectedTo]="connectedTo" cdkDropListOrientation="horizontal" class="apps-grid">
-                    <div *ngFor="let item of section.AppItems" cdkDrag class="app-item-wrapper">
+                    <div *ngFor="let item of section.AppItems; trackBy: trackById" cdkDrag class="app-item-wrapper">
                         <div *cdkDragPlaceholder class="drag-placeholder"></div>
                         <app-app-tile [app]="item" [editMode]="false" (edit)="openEditModal($event)" (delete)="onDeleteApp($event)">
                         </app-app-tile>
@@ -82,5 +82,8 @@
     </div>
 </main>
 <!-- Modal -->
-<app-edit-app-modal *ngIf="showModal" [app]="editingItem" (saveApp)="onSaveApp($event)" (cancel)="showModal = false">
+<app-edit-app-modal *ngIf="showModal" [app]="editingItem" [sections]="sections" (saveApp)="onSaveApp($event)" (cancel)="showModal = false">
 </app-edit-app-modal>
+<!-- Settings Modal -->
+<app-settings-modal *ngIf="showSettingsModal" [sections]="sections" (close)="onSettingsClose()" (sectionsUpdated)="loadSections()">
+</app-settings-modal>

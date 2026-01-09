@@ -28,6 +28,14 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Section Selection -->
+                    <div class="mb-3" *ngIf="appType === 'app'">
+                        <label class="form-label">Section</label>
+                        <select class="form-select" [(ngModel)]="app.section" name="sectionId" required>
+                            <option [ngValue]="undefined" disabled>Select a section</option>
+                            <option *ngFor="let section of sections" [ngValue]="section.id">{{section.title}}</option>
+                        </select>
+                    </div>
                     <!-- Icon Selection -->
                     <div class="mb-3">
                         <label class="form-label">Icon</label>
@@ -45,32 +53,18 @@
                                 <label class="form-check-label" for="iconFile">File Upload</label>
                             </div>
                         </div>
-                        
                         <!-- Dashboard Icons Search -->
                         <div *ngIf="iconType === 'dashboard'" class="dashboard-icon-selector">
-                            <input 
-                                type="text" 
-                                class="form-control mb-2" 
-                                [(ngModel)]="iconSearchQuery" 
-                                (input)="onIconSearch()"
-                                placeholder="Search for icon (e.g., youtube, plex, github)"
-                                name="iconSearch">
+                            <input type="text" class="form-control mb-2" [(ngModel)]="iconSearchQuery" (input)="onIconSearch()" placeholder="Search for icon (e.g., youtube, plex, github)" name="iconSearch">
                             <div *ngIf="isLoadingIcons" class="text-muted small mb-2">Searching icons...</div>
                             <div *ngIf="iconSearchResults.length > 0" class="icon-grid">
-                                <div 
-                                    *ngFor="let iconName of iconSearchResults" 
-                                    class="icon-item"
-                                    (click)="selectDashboardIcon(iconName)"
-                                    [title]="iconName">
+                                <div *ngFor="let iconName of iconSearchResults" class="icon-item" (click)="selectDashboardIcon(iconName)" [title]="iconName">
                                     <img [src]="getIconUrl(iconName)" [alt]="iconName" onerror="this.style.display='none'">
                                     <small class="icon-name">{{iconName}}</small>
                                 </div>
                             </div>
-                            <div *ngIf="iconSearchQuery && !isLoadingIcons && iconSearchResults.length === 0" class="text-muted small mt-2">
-                                No icons found. Try searching for common names like "youtube", "plex", "github", etc.
-                            </div>
+                            <div *ngIf="iconSearchQuery && !isLoadingIcons && iconSearchResults.length === 0" class="text-muted small mt-2"> No icons found. Try searching for common names like "youtube", "plex", "github", etc. </div>
                         </div>
-                        
                         <div *ngIf="iconType === 'url'">
                             <input type="text" class="form-control" [(ngModel)]="app.icon" name="icon" placeholder="https://example.com/icon.png">
                         </div>

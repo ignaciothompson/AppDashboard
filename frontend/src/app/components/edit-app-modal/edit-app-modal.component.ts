@@ -12,8 +12,13 @@ import { ApiService, AppItem } from '../../services/api.service';
 })
 export class EditAppModalComponent {
   @Input() app: AppItem = { name: '', url: '' };
-  @Output() saveApp = new EventEmitter<AppItem>();
+  @Input() sections: import('../../services/api.service').Section[] = [];
+  // Use a more complex event payload or just manage it in the parent?
+  // Let's change payload to include optional file.
+  @Output() saveApp = new EventEmitter<{ app: AppItem, file?: File }>();
   @Output() cancel = new EventEmitter<void>();
+
+  selectedFile: File | undefined;
 
   iconType: 'url' | 'file' | 'dashboard' = 'url';
   appType: 'app' | 'bookmark' = 'app';
@@ -167,32 +172,23 @@ export class EditAppModalComponent {
         this.app.url = 'https://' + this.app.url;
       }
       this.app.type = this.appType;
-      this.saveApp.emit(this.app);
+      this.saveApp.emit({ app: this.app, file: this.selectedFile });
     }
   }
 
   onFileSelected(event: any) {
       const file: File = event.target.files[0];
       if (file) {
-          this.uploading = true;
-          this.api.uploadIcon(file).subscribe({
-              next: (response) => {
-                  this.app.icon = this.api['apiUrl'].replace('/api', '') + response.url; // Hacky full path construction, or just use relative
-                  // Better: Just store relative path and let base tag or logic handle it, but for now absolute is safer if we want to preview it easily
-                  // Actually, let's just assume the server serves it at localhost:3000/uploads/...
-                  // But we are on frontend. 
-                  // Let's just store the relative path returned by server: /uploads/filename
-                  // And prepending the server origin when displaying if needed? 
-                  // Or store full URL if we can.
-                  // For simplicity:
-                  this.app.icon = 'http://localhost:3000' + response.url; 
-                  this.uploading = false;
-              },
-              error: () => {
-                  alert('Upload failed');
-                  this.uploading = false;
-              }
-          });
+          this.selectedFile = file;
+          // Preview
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+              // We just show preview, don't set app.icon actual value until saved?
+              // The preview logic usually binds to app.icon.
+              // Let's set app.icon to data URL for preview purposes.
+              this.app.icon = e.target.result;
+          };
+          reader.readAsDataURL(file);
       }
   }
 }

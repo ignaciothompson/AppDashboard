@@ -4,6 +4,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from 
 import { ApiService, AppItem, Section } from '../../services/api.service';
 import { AppTileComponent } from '../app-tile/app-tile.component';
 import { EditAppModalComponent } from '../edit-app-modal/edit-app-modal.component';
+import { SettingsModalComponent } from '../settings-modal/settings-modal.component';
 import { InteractiveDotsComponent } from '../interactive-dots/interactive-dots.component';
 import { ToastrService } from 'ngx-toastr';
 
@@ -15,6 +16,7 @@ import { ToastrService } from 'ngx-toastr';
     DragDropModule,
     AppTileComponent, 
     EditAppModalComponent,
+    SettingsModalComponent,
     InteractiveDotsComponent
   ],
   templateUrl: './dashboard.component.html',
@@ -26,6 +28,7 @@ export class DashboardComponent implements OnInit {
   currentTime = new Date();
   
   showModal = false;
+  showSettingsModal = false;
   editingItem: AppItem = { name: '', url: '' };
   
   // For connected drag lists
@@ -62,7 +65,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadSections() {
-    this.api.getSections().subscribe({
+    this.api.getDashboardData().subscribe({
       next: (sections) => {
           this.sections = sections;
       },
@@ -74,7 +77,7 @@ export class DashboardComponent implements OnInit {
   loadBookmarks() {
       this.api.getBookmarks().subscribe({
           next: (bookmarks) => this.bookmarks = bookmarks,
-          error: (err) => console.error('Failed to load bookmarks')
+          error: (err) => console.error('Failed to load bookmarks', err)
       });
   }
 
@@ -87,7 +90,7 @@ export class DashboardComponent implements OnInit {
   }
 
   // --- DRAG & DROP ---
-  drop(event: CdkDragDrop<AppItem[]>, sectionId: number | undefined) {
+  drop(event: CdkDragDrop<AppItem[]>, sectionId: string | undefined) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       this.updateSectionOrder(sectionId, event.container.data);
@@ -102,7 +105,7 @@ export class DashboardComponent implements OnInit {
       // We need to find the Previous Section ID too... 
       // Actually, we just need to update the moved item's SectionId and its order
       const movedItem = event.container.data[event.currentIndex];
-      movedItem.SectionId = sectionId;
+      movedItem.section = sectionId ? sectionId.toString() : undefined; // string ID
       
       this.api.updateApp(movedItem.id!, movedItem).subscribe(); // Update SectionId
       
@@ -111,7 +114,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  updateSectionOrder(sectionId: number | undefined, items: AppItem[]) {
+  updateSectionOrder(sectionId: string | undefined, items: AppItem[]) {
       items.forEach((item, index) => {
           item.order = index;
           if(item.id) this.api.updateApp(item.id, item).subscribe();
@@ -130,20 +133,12 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  dropSection(event: CdkDragDrop<Section[]>) {
-      moveItemInArray(this.sections, event.previousIndex, event.currentIndex);
-      this.sections.forEach((sec, index) => {
-          sec.order = index;
-          if (sec.id) this.api.updateSection(sec.id, sec).subscribe();
-      });
-  }
-
   // --- ACTIONS ---
   openAddModal() {
     this.editingItem = { name: '', url: '' };
     // Default to first section?
     if (this.sections.length > 0) {
-        this.editingItem.SectionId = this.sections[0].id;
+        this.editingItem.section = this.sections[0].id;
     } else {
         // If no sections, maybe force create one?
         // Or show error?
@@ -152,12 +147,13 @@ export class DashboardComponent implements OnInit {
     this.showModal = true;
   }
 
-  addSection() {
-      const title = prompt("Section Title:");
-      if (title) {
-          const newSec: Section = { title, order: this.sections.length };
-          this.api.addSection(newSec).subscribe(() => this.loadSections());
-      }
+  openSettingsModal() {
+      this.showSettingsModal = true;
+  }
+
+  onSettingsClose() {
+      this.showSettingsModal = false;
+      this.loadSections(); // Refresh in case reordered/renamed/deleted
   }
 
   deleteSection(section: Section) {
@@ -171,9 +167,20 @@ export class DashboardComponent implements OnInit {
     this.showModal = true;
   }
 
-  onSaveApp(app: AppItem) {
+  onSaveApp(event: any) {
+    // Handle both old event (AppItem) and new ({ app, file }) for compatibility or just assume new
+    let app: AppItem;
+    let file: File | undefined;
+
+    if (event.app) {
+        app = event.app;
+        file = event.file;
+    } else {
+        app = event;
+    }
+
     if (app.id) {
-      this.api.updateApp(app.id, app).subscribe(() => {
+      this.api.updateApp(app.id, app, file).subscribe(() => {
         this.loadSections();
         this.loadBookmarks();
         this.showModal = false;
@@ -182,31 +189,31 @@ export class DashboardComponent implements OnInit {
     } else {
       if (app.type === 'bookmark') {
           // Ensure bookmark doesn't have SectionId
-          app.SectionId = undefined;
+          app.section = undefined;
           app.order = this.bookmarks.length;
-          this.api.addApp(app).subscribe(() => {
+          this.api.addApp(app, file).subscribe(() => {
             this.loadBookmarks();
             this.showModal = false;
             this.toastr.success('Bookmark added');
           });
       } else {
-        if (!app.SectionId && this.sections.length === 0) {
+        if (!app.section && this.sections.length === 0) {
             // Create default section
             this.api.addSection({ title: 'Main', order: 0 }).subscribe(sec => {
-                app.SectionId = sec.id;
+                app.section = sec.id;
                 app.order = 0;
-                this.createApp(app);
+                this.createApp(app, file);
             });
         } else {
             app.order = 999; // append
-            this.createApp(app);
+            this.createApp(app, file);
         }
       }
     }
   }
 
-  createApp(app: AppItem) {
-      this.api.addApp(app).subscribe(() => {
+  createApp(app: AppItem, file?: File) {
+      this.api.addApp(app, file).subscribe(() => {
         this.loadSections();
         this.showModal = false;
         this.toastr.success('Item added');
@@ -221,5 +228,10 @@ export class DashboardComponent implements OnInit {
          this.toastr.info('Item deleted');
        });
      }
+  }
+
+
+  trackById(index: number, item: any): string | number {
+    return item.id || index;
   }
 }
