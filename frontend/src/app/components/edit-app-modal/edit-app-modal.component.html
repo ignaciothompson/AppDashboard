@@ -1,87 +1,149 @@
-<div class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.5)">
-    <div class="modal-dialog" role="document">
+<div class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.7)">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{app.id ? 'Edit App' : 'Add App'}}</h5>
+                <h5 class="modal-title">{{app.id ? 'Edit App' : 'Add New App'}}</h5>
                 <button type="button" class="btn-close" (click)="close()"></button>
             </div>
             <div class="modal-body">
-                <form (ngSubmit)="save()" #f="ngForm">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" [(ngModel)]="app.name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">URL</label>
-                        <input type="url" class="form-control" [(ngModel)]="app.url" name="url" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <div class="d-flex gap-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="appType" [(ngModel)]="appType" value="app" id="typeApp">
-                                <label class="form-check-label" for="typeApp">Standard App</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="appType" [(ngModel)]="appType" value="bookmark" id="typeBookmark">
-                                <label class="form-check-label" for="typeBookmark">Fast Access (Bookmark)</label>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Section Selection -->
-                    <div class="mb-3" *ngIf="appType === 'app'">
-                        <label class="form-label">Section</label>
-                        <select class="form-select" [(ngModel)]="app.section" name="sectionId" required>
-                            <option [ngValue]="undefined" disabled>Select a section</option>
-                            <option *ngFor="let section of sections" [ngValue]="section.id">{{section.title}}</option>
-                        </select>
-                    </div>
-                    <!-- Icon Selection -->
-                    <div class="mb-3">
-                        <label class="form-label">Icon</label>
-                        <div class="d-flex gap-2 mb-2 flex-wrap">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="dashboard" id="iconDashboard" (change)="onIconTypeChange()">
-                                <label class="form-check-label" for="iconDashboard">Dashboard Icons</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="url" id="iconUrl">
-                                <label class="form-check-label" for="iconUrl">URL</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="iconType" [(ngModel)]="iconType" value="file" id="iconFile">
-                                <label class="form-check-label" for="iconFile">File Upload</label>
-                            </div>
-                        </div>
-                        <!-- Dashboard Icons Search -->
-                        <div *ngIf="iconType === 'dashboard'" class="dashboard-icon-selector">
-                            <input type="text" class="form-control mb-2" [(ngModel)]="iconSearchQuery" (input)="onIconSearch()" placeholder="Search for icon (e.g., youtube, plex, github)" name="iconSearch">
-                            <div *ngIf="isLoadingIcons" class="text-muted small mb-2">Searching icons...</div>
-                            <div *ngIf="iconSearchResults.length > 0" class="icon-grid">
-                                <div *ngFor="let iconName of iconSearchResults" class="icon-item" (click)="selectDashboardIcon(iconName)" [title]="iconName">
-                                    <img [src]="getIconUrl(iconName)" [alt]="iconName" onerror="this.style.display='none'">
-                                    <small class="icon-name">{{iconName}}</small>
+                <div class="modal-layout">
+                    <!-- Left Column: Icon Preview -->
+                    <div class="icon-preview-section">
+                        <div class="icon-preview-card">
+                            <div class="icon-preview-wrapper">
+                                <img *ngIf="app.icon && !iconError" [src]="app.icon" [alt]="app.name || 'App Icon'" class="icon-preview-img" (error)="iconError = true">
+                                <div *ngIf="!app.icon || iconError" class="icon-preview-fallback">
+                                    <i class="bi bi-box-seam"></i>
                                 </div>
                             </div>
-                            <div *ngIf="iconSearchQuery && !isLoadingIcons && iconSearchResults.length === 0" class="text-muted small mt-2"> No icons found. Try searching for common names like "youtube", "plex", "github", etc. </div>
-                        </div>
-                        <div *ngIf="iconType === 'url'">
-                            <input type="text" class="form-control" [(ngModel)]="app.icon" name="icon" placeholder="https://example.com/icon.png">
-                        </div>
-                        <div *ngIf="iconType === 'file'">
-                            <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*">
-                            <div *ngIf="uploading" class="text-muted small mt-1">Uploading...</div>
-                        </div>
-                        <div *ngIf="app.icon" class="mt-2 d-flex align-items-center gap-2">
-                            <img [src]="app.icon" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'">
-                            <small class="text-muted">Current Icon</small>
+                            <span class="icon-preview-name">{{app.name || 'App Name'}}</span>
+                            <span class="icon-preview-url">{{app.url || 'https://...'}}</span>
                         </div>
                     </div>
-                </form>
+                    <!-- Right Column: Form -->
+                    <div class="form-section">
+                        <form (ngSubmit)="save()" #f="ngForm">
+                            <!-- Template Selector -->
+                            <div class="form-group" *ngIf="!app.id">
+                                <label class="form-label">
+                                    <i class="bi bi-grid-3x3-gap-fill me-1"></i> Use Template </label>
+                                <select class="form-select" [ngModel]="selectedTemplate?.id || ''" (ngModelChange)="onTemplateSelect($event)" name="template">
+                                    <option value="">Custom App (No Template)</option>
+                                    <optgroup label="Media">
+                                        <option *ngFor="let t of templates | filter:'category':'media'" [value]="t.id">{{t.name}}</option>
+                                    </optgroup>
+                                    <optgroup label="Downloads">
+                                        <option *ngFor="let t of templates | filter:'category':'downloads'" [value]="t.id">{{t.name}}</option>
+                                    </optgroup>
+                                    <optgroup label="Infrastructure">
+                                        <option *ngFor="let t of templates | filter:'category':'infrastructure'" [value]="t.id">{{t.name}}</option>
+                                    </optgroup>
+                                    <optgroup label="Productivity">
+                                        <option *ngFor="let t of templates | filter:'category':'productivity'" [value]="t.id">{{t.name}}</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <!-- Basic Info -->
+                            <div class="form-group">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" [(ngModel)]="app.name" name="name" placeholder="My App" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">URL</label>
+                                <input type="url" class="form-control" [(ngModel)]="app.url" name="url" placeholder="https://example.com" required>
+                            </div>
+                            <!-- Type Selection -->
+                            <div class="form-group">
+                                <label class="form-label">Type</label>
+                                <div class="btn-group-toggle">
+                                    <button type="button" class="toggle-btn" [class.active]="appType === 'app'" (click)="appType = 'app'">
+                                        <i class="bi bi-grid-fill"></i> Standard App </button>
+                                    <button type="button" class="toggle-btn" [class.active]="appType === 'bookmark'" (click)="appType = 'bookmark'">
+                                        <i class="bi bi-lightning-charge-fill"></i> Fast Access </button>
+                                </div>
+                            </div>
+                            <!-- Section Selection -->
+                            <div class="form-group" *ngIf="appType === 'app'">
+                                <label class="form-label">Section</label>
+                                <select class="form-select" [(ngModel)]="app.section" name="sectionId" required>
+                                    <option [ngValue]="undefined" disabled>Select a section</option>
+                                    <option *ngFor="let section of sections" [ngValue]="section.id">{{section.title}}</option>
+                                </select>
+                            </div>
+                            <!-- Health Check Toggle -->
+                            <div class="form-group">
+                                <label class="form-label">Status Monitoring</label>
+                                <div class="health-check-toggle">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" [(ngModel)]="app.healthCheck" name="healthCheck" [ngModelOptions]="{standalone: true}">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span class="toggle-label">
+                                        <i class="bi" [class.bi-activity]="app.healthCheck !== false" [class.bi-x-circle]="app.healthCheck === false"></i> {{app.healthCheck !== false ? 'Health check enabled' : 'Health check disabled'}} </span>
+                                </div>
+                            </div>
+                            <!-- Icon Selection (only show if no template, or template without icon) -->
+                            <div class="form-group" *ngIf="iconType !== 'template'">
+                                <label class="form-label">Icon</label>
+                                <div class="btn-group-toggle icon-type-toggle">
+                                    <button type="button" class="toggle-btn" [class.active]="iconType === 'dashboard'" (click)="iconType = 'dashboard'; onIconTypeChange()">
+                                        <i class="bi bi-collection-fill"></i> Library </button>
+                                    <button type="button" class="toggle-btn" [class.active]="iconType === 'url'" (click)="iconType = 'url'">
+                                        <i class="bi bi-link-45deg"></i> URL </button>
+                                    <button type="button" class="toggle-btn" [class.active]="iconType === 'file'" (click)="iconType = 'file'">
+                                        <i class="bi bi-upload"></i> Upload </button>
+                                </div>
+                                <!-- Dashboard Icons Search -->
+                                <div *ngIf="iconType === 'dashboard'" class="icon-search-section">
+                                    <input type="text" class="form-control" [(ngModel)]="iconSearchQuery" (input)="onIconSearch()" placeholder="Search icons (e.g., youtube, plex, github)" name="iconSearch">
+                                    <div *ngIf="isLoadingIcons" class="icon-loading">
+                                        <div class="spinner-border spinner-border-sm"></div>
+                                        <span>Searching...</span>
+                                    </div>
+                                    <div *ngIf="iconSearchResults.length > 0" class="icon-grid">
+                                        <div *ngFor="let iconName of iconSearchResults" class="icon-item" [class.selected]="iconSearchQuery === iconName" (click)="selectDashboardIcon(iconName)" [title]="iconName">
+                                            <img [src]="getIconUrl(iconName)" [alt]="iconName" onerror="this.style.display='none'">
+                                            <small class="icon-name">{{iconName}}</small>
+                                        </div>
+                                    </div>
+                                    <div *ngIf="iconSearchQuery && !isLoadingIcons && iconSearchResults.length === 0" class="no-icons-msg"> No icons found. Try names like "youtube", "plex", or "github". </div>
+                                </div>
+                                <!-- URL Input -->
+                                <div *ngIf="iconType === 'url'" class="mt-2">
+                                    <input type="text" class="form-control" [(ngModel)]="app.icon" name="icon" placeholder="https://example.com/icon.png" (input)="iconError = false">
+                                </div>
+                                <!-- File Upload -->
+                                <div *ngIf="iconType === 'file'" class="mt-2">
+                                    <input type="file" class="form-control" (change)="onFileSelected($event)" accept="image/*">
+                                    <div *ngIf="uploading" class="upload-status">
+                                        <div class="spinner-border spinner-border-sm"></div>
+                                        <span>Uploading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Configuration Section (for templates with config fields) -->
+                            <div class="form-group config-section" *ngIf="hasConfigFields">
+                                <label class="form-label">
+                                    <i class="bi bi-sliders me-1"></i> {{selectedTemplate?.name}} Configuration </label>
+                                <div class="config-fields">
+                                    <div *ngFor="let field of selectedTemplate?.configFields" class="config-field">
+                                        <label class="config-label">{{field.label}}</label>
+                                        <input [type]="field.type" class="form-control" [(ngModel)]="appConfig[field.key]" [name]="'config_' + field.key" [placeholder]="field.placeholder || ''" [required]="field.required || false">
+                                        <small *ngIf="field.description" class="config-description">{{field.description}}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
+                <button *ngIf="app.id" type="button" class="btn btn-danger me-auto" (click)="onDelete()">
+                    <i class="bi bi-trash3-fill me-1"></i> Delete </button>
                 <button type="button" class="btn btn-secondary" (click)="close()">Cancel</button>
-                <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!app.name || !app.url || uploading">Save</button>
+                <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!app.name || !app.url || uploading">
+                    <i class="bi bi-check-lg me-1"></i> Save </button>
             </div>
         </div>
     </div>
+</div>

@@ -1,28 +1,35 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, AppItem } from '../../services/api.service';
+import { APP_TEMPLATES, AppTemplate, ConfigField, getTemplateById } from '../../models/app-templates';
+import { FilterPipe } from '../../pipes/filter.pipe';
 
 @Component({
   selector: 'app-edit-app-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FilterPipe],
   templateUrl: './edit-app-modal.component.html',
   styleUrls: ['./edit-app-modal.component.css']
 })
-export class EditAppModalComponent {
+export class EditAppModalComponent implements OnInit {
   @Input() app: AppItem = { name: '', url: '' };
   @Input() sections: import('../../services/api.service').Section[] = [];
-  // Use a more complex event payload or just manage it in the parent?
-  // Let's change payload to include optional file.
   @Output() saveApp = new EventEmitter<{ app: AppItem, file?: File }>();
+  @Output() deleteApp = new EventEmitter<AppItem>();
   @Output() cancel = new EventEmitter<void>();
 
   selectedFile: File | undefined;
 
-  iconType: 'url' | 'file' | 'dashboard' = 'url';
+  iconType: 'url' | 'file' | 'dashboard' | 'template' = 'dashboard';
   appType: 'app' | 'bookmark' = 'app';
   uploading = false;
+  iconError = false;
+  
+  // Templates
+  templates = APP_TEMPLATES;
+  selectedTemplate: AppTemplate | null = null;
+  appConfig: Record<string, string> = {};
   
   // Dashboard Icons
   iconSearchQuery = '';
@@ -30,7 +37,6 @@ export class EditAppModalComponent {
   isLoadingIcons = false;
   private readonly CDN_BASE = 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg';
   
-  // Common icon names for quick access
   private commonIcons = [
     'youtube', 'netflix', 'spotify', 'plex', 'jellyfin', 'radarr', 'sonarr', 'qbittorrent',
     'github', 'gitlab', 'docker', 'kubernetes', 'nginx', 'apache', 'mysql', 'postgresql',
@@ -40,126 +46,171 @@ export class EditAppModalComponent {
     'reddit', 'twitch', 'steam', 'epic-games', 'nvidia', 'amd', 'intel',
     'windows', 'linux', 'macos', 'ubuntu', 'debian', 'fedora', 'arch-linux',
     'vscode', 'vim', 'sublime-text', 'notion', 'obsidian', 'jira', 'confluence',
-    'wordpress', 'joomla', 'drupal', 'ghost', 'medium', 'dev-to', 'stack-overflow'
+    'wordpress', 'joomla', 'drupal', 'ghost', 'medium', 'dev-to', 'stack-overflow',
+    'prowlarr', 'lidarr', 'readarr', 'bazarr', 'overseerr', 'jellyseerr', 'tautulli',
+    'portainer', 'traefik', 'caddy', 'pihole', 'adguard-home', 'wireguard', 'tailscale'
   ];
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-      if (this.app.type) {
-          this.appType = this.app.type;
+    // Load existing app type
+    if (this.app.type) {
+      this.appType = this.app.type;
+    }
+    
+    // Load existing config
+    if (this.app.config) {
+      this.appConfig = { ...this.app.config };
+    }
+    
+    // Load existing template
+    if (this.app.templateId) {
+      this.selectedTemplate = getTemplateById(this.app.templateId) || null;
+      this.iconType = 'template';
+    } else if (this.app.icon?.includes('cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons')) {
+      this.iconType = 'dashboard';
+      const match = this.app.icon.match(/svg\/([^/]+)\.svg/);
+      if (match) {
+        this.iconSearchQuery = match[1].replace(/-light|-dark$/, '');
       }
-      // If icon is from dashboard-icons CDN, set iconType to dashboard
-      if (this.app.icon && this.app.icon.includes('cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons')) {
-          this.iconType = 'dashboard';
-          // Extract icon name from URL
-          const match = this.app.icon.match(/svg\/([^/]+)\.svg/);
-          if (match) {
-              this.iconSearchQuery = match[1].replace(/-light|-dark$/, '');
-          }
-      } else if (this.app.name && !this.app.icon) {
-          // Auto-suggest icon based on app name
-          const suggestedIcon = this.app.name.toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-|-$/g, '');
-          if (suggestedIcon && this.commonIcons.includes(suggestedIcon)) {
-              this.iconSearchQuery = suggestedIcon;
-          }
+    } else if (this.app.icon) {
+      this.iconType = 'url';
+    } else if (this.app.name && !this.app.icon) {
+      this.iconType = 'dashboard';
+      const suggestedIcon = this.app.name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (this.commonIcons.includes(suggestedIcon)) {
+        this.iconSearchQuery = suggestedIcon;
       }
+    }
+  }
+
+  // Template Selection
+  onTemplateSelect(templateId: string) {
+    if (!templateId) {
+      this.selectedTemplate = null;
+      this.iconType = 'dashboard';
+      return;
+    }
+    
+    const template = getTemplateById(templateId);
+    if (template) {
+      this.selectedTemplate = template;
+      this.app.name = template.name;
+      this.app.icon = template.icon;
+      this.app.iconUrl = template.icon;
+      this.app.templateId = template.id;
+      this.iconType = 'template';
+      this.iconError = false;
+      
+      // Initialize config fields with empty values
+      if (template.configFields) {
+        template.configFields.forEach((field: ConfigField) => {
+          if (!(field.key in this.appConfig)) {
+            this.appConfig[field.key] = '';
+          }
+        });
+      }
+    }
+  }
+
+  clearTemplate() {
+    this.selectedTemplate = null;
+    this.app.templateId = undefined;
+    this.iconType = 'dashboard';
+  }
+
+  get hasConfigFields(): boolean {
+    return !!this.selectedTemplate?.configFields?.length;
   }
   
+  // Icon Search
   onIconSearch() {
-      if (!this.iconSearchQuery.trim()) {
-          this.iconSearchResults = [];
-          return;
+    if (!this.iconSearchQuery.trim()) {
+      this.iconSearchResults = [];
+      return;
+    }
+    
+    const query = this.iconSearchQuery.toLowerCase().trim();
+    this.isLoadingIcons = true;
+    
+    const matched = this.commonIcons.filter(icon => 
+      icon.includes(query) || query.includes(icon)
+    );
+    
+    if (this.app.name) {
+      const appNameIcon = this.app.name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (appNameIcon && !matched.includes(appNameIcon)) {
+        matched.unshift(appNameIcon);
       }
-      
-      const query = this.iconSearchQuery.toLowerCase().trim();
-      this.isLoadingIcons = true;
-      
-      // Search through common icons first
-      const matched = this.commonIcons.filter(icon => 
-          icon.includes(query) || query.includes(icon)
-      );
-      
-      // Also try to construct icon name from app name if available
-      if (this.app.name) {
-          const appNameIcon = this.app.name.toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-|-$/g, '');
-          if (appNameIcon && !matched.includes(appNameIcon)) {
-              matched.unshift(appNameIcon);
-          }
-      }
-      
-      // Add the search query itself as a potential icon name
-      const searchIcon = query.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      if (searchIcon && !matched.includes(searchIcon)) {
-          matched.unshift(searchIcon);
-      }
-      
-      // Limit results and verify icons exist
-      this.iconSearchResults = matched.slice(0, 20);
-      this.verifyIcons();
+    }
+    
+    const searchIcon = query.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (searchIcon && !matched.includes(searchIcon)) {
+      matched.unshift(searchIcon);
+    }
+    
+    this.iconSearchResults = matched.slice(0, 20);
+    this.verifyIcons();
   }
   
   verifyIcons() {
-      // Verify icons exist by checking if they load
-      const verified: string[] = [];
-      let checked = 0;
-      
-      this.iconSearchResults.forEach(iconName => {
-          const iconUrl = `${this.CDN_BASE}/${iconName}.svg`;
-          const img = new Image();
-          img.onload = () => {
-              if (!verified.includes(iconName)) {
-                  verified.push(iconName);
-              }
-              checked++;
-              if (checked === this.iconSearchResults.length) {
-                  this.iconSearchResults = verified;
-                  this.isLoadingIcons = false;
-              }
-          };
-          img.onerror = () => {
-              checked++;
-              if (checked === this.iconSearchResults.length) {
-                  this.iconSearchResults = verified;
-                  this.isLoadingIcons = false;
-              }
-          };
-          img.src = iconUrl;
-      });
-      
-      if (this.iconSearchResults.length === 0) {
+    const verified: string[] = [];
+    let checked = 0;
+    
+    this.iconSearchResults.forEach(iconName => {
+      const iconUrl = `${this.CDN_BASE}/${iconName}.svg`;
+      const img = new Image();
+      img.onload = () => {
+        if (!verified.includes(iconName)) verified.push(iconName);
+        checked++;
+        if (checked === this.iconSearchResults.length) {
+          this.iconSearchResults = verified;
           this.isLoadingIcons = false;
-      }
+        }
+      };
+      img.onerror = () => {
+        checked++;
+        if (checked === this.iconSearchResults.length) {
+          this.iconSearchResults = verified;
+          this.isLoadingIcons = false;
+        }
+      };
+      img.src = iconUrl;
+    });
+    
+    if (this.iconSearchResults.length === 0) {
+      this.isLoadingIcons = false;
+    }
   }
   
   onIconTypeChange() {
-      if (this.iconType === 'dashboard') {
-          // If no search query but we have app name, try to auto-suggest
-          if (!this.iconSearchQuery && this.app.name) {
-              const suggestedIcon = this.app.name.toLowerCase()
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/^-|-$/g, '');
-              if (suggestedIcon) {
-                  this.iconSearchQuery = suggestedIcon;
-              }
-          }
-          if (this.iconSearchQuery) {
-              this.onIconSearch();
-          }
+    if (this.iconType === 'dashboard') {
+      if (!this.iconSearchQuery && this.app.name) {
+        const suggestedIcon = this.app.name.toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        if (suggestedIcon) this.iconSearchQuery = suggestedIcon;
       }
+      if (this.iconSearchQuery) this.onIconSearch();
+    }
+    this.iconError = false;
   }
   
   selectDashboardIcon(iconName: string) {
-      this.app.icon = `${this.CDN_BASE}/${iconName}.svg`;
-      this.iconSearchQuery = iconName;
+    const iconUrl = `${this.CDN_BASE}/${iconName}.svg`;
+    this.app.icon = iconUrl;
+    this.app.iconUrl = iconUrl;
+    this.iconSearchQuery = iconName;
+    this.iconError = false;
   }
   
   getIconUrl(iconName: string): string {
-      return `${this.CDN_BASE}/${iconName}.svg`;
+    return `${this.CDN_BASE}/${iconName}.svg`;
   }
 
   close() {
@@ -172,23 +223,38 @@ export class EditAppModalComponent {
         this.app.url = 'https://' + this.app.url;
       }
       this.app.type = this.appType;
+      
+      // Sync icon to iconUrl for all icon types
+      if ((this.iconType === 'url' || this.iconType === 'dashboard' || this.iconType === 'template') && this.app.icon) {
+        this.app.iconUrl = this.app.icon;
+      }
+      
+      // Save config if template has fields
+      if (this.selectedTemplate?.configFields?.length) {
+        this.app.config = { ...this.appConfig };
+        this.app.templateId = this.selectedTemplate.id;
+      }
+      
       this.saveApp.emit({ app: this.app, file: this.selectedFile });
     }
   }
 
+  onDelete() {
+    if (this.app.id && confirm(`Are you sure you want to delete "${this.app.name}"?`)) {
+      this.deleteApp.emit(this.app);
+    }
+  }
+
   onFileSelected(event: any) {
-      const file: File = event.target.files[0];
-      if (file) {
-          this.selectedFile = file;
-          // Preview
-          const reader = new FileReader();
-          reader.onload = (e: any) => {
-              // We just show preview, don't set app.icon actual value until saved?
-              // The preview logic usually binds to app.icon.
-              // Let's set app.icon to data URL for preview purposes.
-              this.app.icon = e.target.result;
-          };
-          reader.readAsDataURL(file);
-      }
+    const file: File = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.app.icon = e.target.result;
+        this.iconError = false;
+      };
+      reader.readAsDataURL(file);
+    }
   }
 }

@@ -94,6 +94,32 @@
     color: white;
 }
 
+/* Icon only nav button */
+.nav-btn-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(35, 47, 72, 0.8);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-btn-icon:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.nav-btn-icon i {
+    font-size: 1rem;
+}
+
 /* User Avatar */
 .user-avatar {
     width: 2.5rem;

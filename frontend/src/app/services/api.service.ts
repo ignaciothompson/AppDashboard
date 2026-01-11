@@ -12,6 +12,9 @@ export interface AppItem {
   order?: number;
   section?: string; // Relation ID
   type?: 'app' | 'bookmark';
+  templateId?: string; // Reference to app template
+  config?: Record<string, string>; // Template-specific configuration
+  healthCheck?: boolean; // Enable/disable status ping
 }
 
 export interface Section {
@@ -105,7 +108,19 @@ export class ApiService {
       // Icon handling: if 'icon' file exists, construct URL. Else use iconUrl.
       let icon = record['iconUrl'];
       if (record['icon']) {
-          icon = this.pb.files.getUrl(record, record['icon']);
+          icon = this.pb.files.getURL(record, record['icon']);
+      }
+
+      // Parse config JSON if present
+      let config: Record<string, string> | undefined;
+      if (record['config']) {
+          try {
+              config = typeof record['config'] === 'string' 
+                  ? JSON.parse(record['config']) 
+                  : record['config'];
+          } catch (e) {
+              console.warn('Failed to parse app config:', e);
+          }
       }
 
       return {
@@ -115,7 +130,10 @@ export class ApiService {
           icon: icon,
           order: record['order'],
           section: record['section'],
-          type: record['type']
+          type: record['type'],
+          templateId: record['templateId'],
+          config: config,
+          healthCheck: record['healthCheck'] ?? true // Default to true
       };
   }
 
@@ -160,6 +178,9 @@ export class ApiService {
       formData.append('type', app.type || 'app');
       
       if (app.iconUrl) formData.append('iconUrl', app.iconUrl);
+      if (app.templateId) formData.append('templateId', app.templateId);
+      if (app.config) formData.append('config', JSON.stringify(app.config));
+      formData.append('healthCheck', (app.healthCheck !== false).toString());
       
       if (iconFile) {
           formData.append('icon', iconFile);
@@ -182,6 +203,9 @@ export class ApiService {
       if(app.section !== undefined) formData.append('section', app.section || ''); 
       if(app.type) formData.append('type', app.type);
       if(app.iconUrl !== undefined) formData.append('iconUrl', app.iconUrl);
+      if(app.templateId !== undefined) formData.append('templateId', app.templateId || '');
+      if(app.config !== undefined) formData.append('config', JSON.stringify(app.config));
+      if(app.healthCheck !== undefined) formData.append('healthCheck', app.healthCheck.toString());
 
       if (iconFile) {
           formData.append('icon', iconFile);

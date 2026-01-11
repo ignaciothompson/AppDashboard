@@ -8,6 +8,9 @@
             <i class="bi bi-gear-fill me-1"></i> Settings </button>
         <button class="nav-btn nav-btn-primary" (click)="openAddModal()">
             <i class="bi bi-plus-lg me-1"></i> Add </button>
+        <button class="nav-btn nav-btn-icon" (click)="toggleSidebar()" title="Quick View">
+            <i class="bi bi-calendar3"></i>
+        </button>
     </div>
 </header>
 <main class="dashboard-main">
@@ -37,9 +40,8 @@
             <i class="bi bi-lightning-charge-fill section-icon warning"></i>
             <h3 class="section-title">Fast Access</h3>
         </div>
-        <div cdkDropList [cdkDropListData]="bookmarks" (cdkDropListDropped)="dropBookmark($event)" class="fast-access-grid">
-            <div *ngFor="let item of bookmarks; trackBy: trackById" cdkDrag class="fast-access-card">
-                <div *cdkDragPlaceholder class="drag-placeholder fast-access-placeholder"></div>
+        <div class="fast-access-grid">
+            <div *ngFor="let item of bookmarks; trackBy: trackById" class="fast-access-card">
                 <a [href]="item.url" target="_blank" class="fast-access-link">
                     <div class="fast-access-icon-wrapper">
                         <img *ngIf="item.icon" [src]="item.icon" [alt]="item.name" class="fast-access-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
@@ -51,12 +53,12 @@
                 </a>
                 <!-- Hover Config Button -->
                 <button class="card-config-btn" (click)="openEditModal(item); $event.preventDefault(); $event.stopPropagation()">
-                    <i class="bi bi-arrows-fullscreen"></i>
+                    <i class="bi bi-gear-fill"></i>
                 </button>
             </div>
         </div>
     </section>
-    <!-- App Sections - Two Column Layout -->
+    <!-- App Sections -->
     <div class="sections-grid">
         <div class="sections-container">
             <section *ngFor="let section of sections; trackBy: trackById" class="app-section">
@@ -65,14 +67,14 @@
                     <i class="bi section-icon" [ngClass]="{
                         'bi-film danger': section.title.toLowerCase().includes('media'),
                         'bi-hdd-stack-fill info': section.title.toLowerCase().includes('server'),
-                        'bi-folder2-open primary': !section.title.toLowerCase().includes('media') && !section.title.toLowerCase().includes('server')
+                        'bi-database-fill primary': section.title.toLowerCase().includes('database'),
+                        'bi-folder2-open primary': !section.title.toLowerCase().includes('media') && !section.title.toLowerCase().includes('server') && !section.title.toLowerCase().includes('database')
                     }"></i>
                     <h3 class="section-title">{{section.title}}</h3>
                 </div>
                 <!-- Apps Grid -->
-                <div cdkDropList [cdkDropListData]="section.AppItems || []" [id]="'section-' + section.id" (cdkDropListDropped)="drop($event, section.id)" [cdkDropListConnectedTo]="connectedTo" cdkDropListOrientation="horizontal" class="apps-grid">
-                    <div *ngFor="let item of section.AppItems; trackBy: trackById" cdkDrag class="app-item-wrapper">
-                        <div *cdkDragPlaceholder class="drag-placeholder"></div>
+                <div class="apps-grid">
+                    <div *ngFor="let item of section.AppItems; trackBy: trackById" class="app-item-wrapper">
                         <app-app-tile [app]="item" [editMode]="false" (edit)="openEditModal($event)" (delete)="onDeleteApp($event)">
                         </app-app-tile>
                     </div>
@@ -82,8 +84,11 @@
     </div>
 </main>
 <!-- Modal -->
-<app-edit-app-modal *ngIf="showModal" [app]="editingItem" [sections]="sections" (saveApp)="onSaveApp($event)" (cancel)="showModal = false">
+<app-edit-app-modal *ngIf="showModal" [app]="editingItem" [sections]="sections" (saveApp)="onSaveApp($event)" (deleteApp)="onDeleteApp($event); showModal = false" (cancel)="showModal = false">
 </app-edit-app-modal>
 <!-- Settings Modal -->
 <app-settings-modal *ngIf="showSettingsModal" [sections]="sections" (close)="onSettingsClose()" (sectionsUpdated)="loadSections()">
 </app-settings-modal>
+<!-- Right Sidebar -->
+<app-right-sidebar [isOpen]="showSidebar" (closed)="showSidebar = false">
+</app-right-sidebar>

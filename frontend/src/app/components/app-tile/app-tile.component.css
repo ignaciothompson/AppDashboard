@@ -56,8 +56,8 @@
 
 /* Icon Wrapper - Colored Circle */
 .app-icon-wrapper {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 3.5rem;
+    height: 3.5rem;
     border-radius: 9999px;
     background: var(--bg-elevated);
     display: flex;
@@ -73,8 +73,8 @@
 
 /* Icon Image */
 .app-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2rem;
+    height: 2rem;
     object-fit: contain;
     border-radius: 50%;
 }
@@ -146,3 +146,71 @@
 .card-config-btn i {
     font-size: 0.875rem;
 }
+
+/* Status Indicator - Top Left */
+.status-indicator {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 0 6px currentColor;
+    transition: all 0.3s ease;
+}
+
+.status-indicator.online {
+    background: #22c55e;
+    color: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.status-indicator.offline {
+    background: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 6px #ef4444;
+}
+
+/* Pulsing animation for online status */
+.status-indicator.online::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: #22c55e;
+    opacity: 0.4;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.4;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Streams Badge - Shows active stream count */
+.streams-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 2.5rem;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+}
+

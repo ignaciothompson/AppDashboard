@@ -24,7 +24,7 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'online', timestamp: new Date() });
 });
 
-// Proxy: Jellyfin Status
+// Proxy: Jellyfin Status (Public - no auth needed)
 app.get('/api/status/jellyfin', async (req, res) => {
     const { url } = req.query; 
     if (!url) return res.status(400).json({ error: 'URL required' });
@@ -34,6 +34,84 @@ app.get('/api/status/jellyfin', async (req, res) => {
         res.json(response.data);
     } catch (e) {
         res.status(502).json({ error: 'Service unreachable', details: e.message });
+    }
+});
+
+// Proxy: Jellyfin Status with API Key (simplified - status only)
+app.get('/api/jellyfin/status', async (req, res) => {
+    const { url, apiKey } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'URL required' });
+    }
+    
+    const baseUrl = url.replace(/\/$/, ''); // Remove trailing slash
+    
+    try {
+        // Try authenticated request first if API key provided
+        if (apiKey) {
+            const headers = { 'X-Emby-Token': apiKey };
+            const response = await axios.get(`${baseUrl}/System/Info`, { headers, timeout: 5000 });
+            res.json({
+                online: true,
+                serverName: response.data?.ServerName || 'Jellyfin',
+                version: response.data?.Version || 'Unknown'
+            });
+        } else {
+            // Fallback to public info
+            const response = await axios.get(`${baseUrl}/System/Info/Public`, { timeout: 5000 });
+            res.json({
+                online: true,
+                serverName: response.data?.ServerName || 'Jellyfin',
+                version: response.data?.Version || 'Unknown'
+            });
+        }
+    } catch (e) {
+        res.json({ online: false, error: e.message });
+    }
+});
+
+// Generic URL Ping - Check if any website is reachable
+app.get('/api/ping', async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'URL required' });
+    }
+    
+    try {
+        const startTime = Date.now();
+        const response = await axios.head(url, { 
+            timeout: 5000,
+            validateStatus: () => true // Accept any status code
+        });
+        const responseTime = Date.now() - startTime;
+        
+        res.json({
+            online: response.status >= 200 && response.status < 500,
+            statusCode: response.status,
+            responseTime: responseTime
+        });
+    } catch (e) {
+        // Try GET if HEAD fails (some servers don't support HEAD)
+        try {
+            const startTime = Date.now();
+            const response = await axios.get(url, { 
+                timeout: 5000,
+                validateStatus: () => true,
+                maxRedirects: 3
+            });
+            const responseTime = Date.now() - startTime;
+            
+            res.json({
+                online: response.status >= 200 && response.status < 500,
+                statusCode: response.status,
+                responseTime: responseTime
+            });
+        } catch (e2) {
+            res.json({ 
+                online: false, 
+                error: e2.message 
+            });
+        }
     }
 });
 

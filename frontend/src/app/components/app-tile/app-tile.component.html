@@ -3,6 +3,9 @@
         <div class="app-card-content">
             <!-- Hover gradient overlay -->
             <div class="card-overlay"></div>
+            <!-- Status Indicator (top left) - shows for all apps once status is checked -->
+            <div *ngIf="hasStatus" class="status-indicator" [class.online]="isOnline" [class.offline]="!isOnline" [title]="isOnline ? 'Online' : 'Offline'">
+            </div>
             <!-- Icon -->
             <div class="app-icon-wrapper">
                 <img *ngIf="!imageError && app.icon" [src]="app.icon" [alt]="app.name" class="app-icon" (error)="onError()">

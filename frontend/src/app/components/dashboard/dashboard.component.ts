@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ApiService, AppItem, Section } from '../../services/api.service';
 import { AppTileComponent } from '../app-tile/app-tile.component';
 import { EditAppModalComponent } from '../edit-app-modal/edit-app-modal.component';
 import { SettingsModalComponent } from '../settings-modal/settings-modal.component';
 import { InteractiveDotsComponent } from '../interactive-dots/interactive-dots.component';
+import { RightSidebarComponent } from '../right-sidebar/right-sidebar.component';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
@@ -13,11 +13,11 @@ import { ToastrService } from 'ngx-toastr';
   standalone: true,
   imports: [
     CommonModule, 
-    DragDropModule,
     AppTileComponent, 
     EditAppModalComponent,
     SettingsModalComponent,
-    InteractiveDotsComponent
+    InteractiveDotsComponent,
+    RightSidebarComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -29,14 +29,11 @@ export class DashboardComponent implements OnInit {
   
   showModal = false;
   showSettingsModal = false;
+  showSidebar = false;
   editingItem: AppItem = { name: '', url: '' };
-  
-  // For connected drag lists
-  get connectedTo(): string[] {
-      return this.sections.map(s => 'section-' + s.id);
-  }
 
   hostStats: any = null;
+  bookmarks: AppItem[] = [];
 
   constructor(private api: ApiService, private toastr: ToastrService) {}
 
@@ -81,68 +78,16 @@ export class DashboardComponent implements OnInit {
       });
   }
 
-  toggleEditMode() {
-    this.editMode = !this.editMode;
-    if (!this.editMode) {
-        // Maybe save order here if we want batch save? 
-        // For now, sorting updates individually on drop.
-    }
-  }
-
-  // --- DRAG & DROP ---
-  drop(event: CdkDragDrop<AppItem[]>, sectionId: string | undefined) {
-    if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      this.updateSectionOrder(sectionId, event.container.data);
-    } else {
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex,
-      );
-      // Update both source and target sections
-      // We need to find the Previous Section ID too... 
-      // Actually, we just need to update the moved item's SectionId and its order
-      const movedItem = event.container.data[event.currentIndex];
-      movedItem.section = sectionId ? sectionId.toString() : undefined; // string ID
-      
-      this.api.updateApp(movedItem.id!, movedItem).subscribe(); // Update SectionId
-      
-      this.updateSectionOrder(sectionId, event.container.data); // Update target order
-      // Source order update is implicit or we can Trigger it if we want to fill gaps
-    }
-  }
-
-  updateSectionOrder(sectionId: string | undefined, items: AppItem[]) {
-      items.forEach((item, index) => {
-          item.order = index;
-          if(item.id) this.api.updateApp(item.id, item).subscribe();
-      });
-  }
-
-  bookmarks: AppItem[] = [];
-
-  // ... (previous methods)
-
-  dropBookmark(event: CdkDragDrop<AppItem[]>) {
-      moveItemInArray(this.bookmarks, event.previousIndex, event.currentIndex);
-      this.bookmarks.forEach((item, index) => {
-          item.order = index;
-          if(item.id) this.api.updateApp(item.id, item).subscribe();
-      });
+  toggleSidebar() {
+    this.showSidebar = !this.showSidebar;
   }
 
   // --- ACTIONS ---
   openAddModal() {
     this.editingItem = { name: '', url: '' };
-    // Default to first section?
+    // Default to first section
     if (this.sections.length > 0) {
         this.editingItem.section = this.sections[0].id;
-    } else {
-        // If no sections, maybe force create one?
-        // Or show error?
-        // Let's create a default one on the fly if user adds app
     }
     this.showModal = true;
   }
@@ -168,7 +113,6 @@ export class DashboardComponent implements OnInit {
   }
 
   onSaveApp(event: any) {
-    // Handle both old event (AppItem) and new ({ app, file }) for compatibility or just assume new
     let app: AppItem;
     let file: File | undefined;
 
@@ -229,7 +173,6 @@ export class DashboardComponent implements OnInit {
        });
      }
   }
-
 
   trackById(index: number, item: any): string | number {
     return item.id || index;
